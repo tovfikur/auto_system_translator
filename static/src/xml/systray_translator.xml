@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="auto_system_translator.TranslatorSystray">
+        <Dropdown>
+            <t t-set-slot="toggler">
+                <div class="o_systray_item">
+                    <i class="fa fa-language fa-lg" style="padding: 0 10px; line-height: 46px; cursor: pointer;" title="Translator Settings"/>
+                </div>
+            </t>
+            <t t-foreach="state.languages" t-as="lang" t-key="lang.code">
+                 <DropdownItem onSelected="() => this.setLanguage(lang.code)">
+                    <span t-if="lang.code === state.currentLang" class="fa fa-check mr-2"/>
+                    <t t-esc="lang.name"/>
+                 </DropdownItem>
+            </t>
+        </Dropdown>
+    </t>
+</templates>

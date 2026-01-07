@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.auto.translate</field>
+        <field name="model">res.config.settings</field>
+        <field name="priority" eval="90"/>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <div class="app_settings_block" data-string="Auto System Translator" string="Auto System Translator" data-key="auto_system_translator">
+                    <h2>Auto System Translator</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="auto_translate_enabled"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="auto_translate_enabled"/>
+                                <div class="text-muted">
+                                    Enable or disable the auto translation system.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="persist_cache"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="persist_cache"/>
+                                <div class="text-muted">
+                                    Save translations to database (Global Cache). 
+                                    <b>Highly Recommended</b> for performance to avoid re-translating.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="source_odoo_lang"/>
+                                <div class="text-muted">
+                                    Select the source system language.
+                                </div>
+                                <field name="source_odoo_lang"/>
+                            </div>
+                            <div class="o_setting_right_pane" style="margin-top: 16px;">
+                                <label for="target_odoo_lang"/>
+                                <div class="text-muted">
+                                    Select the target language for translation.
+                                </div>
+                                <field name="target_odoo_lang"/>
+                            </div>
+                        </div>
+                        <!--
+                        <div class="col-12 col-lg-6 o_setting_box">
+                             <div class="o_setting_right_pane">
+                                <span class="o_form_label">ReCaptcha</span>
+                                <div class="text-muted">
+                                    Configure ReCaptcha keys.
+                                </div>
+                                <div class="content-group">
+                                    <div class="row mt16">
+                                        <label for="recaptcha_public_key" class="col-lg-3 o_light_label"/>
+                                        <field name="recaptcha_public_key"/>
+                                    </div>
+                                    <div class="row mt16">
+                                        <label for="recaptcha_private_key" class="col-lg-3 o_light_label"/>
+                                        <field name="recaptcha_private_key"/>
+                                    </div>
+                                    <div class="row mt16">
+                                        <label for="recaptcha_min_score" class="col-lg-3 o_light_label"/>
+                                        <field name="recaptcha_min_score"/>
+                                    </div>
+                                </div>
+                             </div>
+                        </div>
+                        -->
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_auto_translator_config" model="ir.actions.act_window">
+        <field name="name">Auto Translator Settings</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="target">inline</field>
+        <field name="context">{'module' : 'auto_system_translator'}</field>
+    </record>
+
+    <menuitem id="menu_auto_translator_config"
+        name="Auto Translator"
+        parent="base.menu_administration"
+        action="action_auto_translator_config"
+        sequence="90"/>
+</odoo>
