@@ -23,11 +23,39 @@ class TranslationService(models.Model):
     def get_supported_languages(self):
         try:
             from deep_translator import GoogleTranslator
-            # get_supported_languages(as_dict=True) returns {name: code}
-            langs = GoogleTranslator().get_supported_languages(as_dict=True)
-            # Convert to [(code, Name), ...] and sort by Name
-            # Title case the name for better display
-            return sorted([(code, name.title()) for name, code in langs.items()], key=lambda x: x[1])
+            langs = None
+            try:
+                langs = GoogleTranslator().get_supported_languages(as_dict=True)
+            except TypeError:
+                langs = GoogleTranslator(source='auto', target='en').get_supported_languages(as_dict=True)
+            except Exception:
+                langs = None
+
+            if isinstance(langs, dict):
+                return sorted([(code, str(name).title()) for name, code in langs.items()], key=lambda x: x[1])
+
+            try:
+                from deep_translator import constants as dt_constants
+                if hasattr(dt_constants, 'GOOGLE_LANGUAGES_TO_CODES') and isinstance(dt_constants.GOOGLE_LANGUAGES_TO_CODES, dict):
+                    m = dt_constants.GOOGLE_LANGUAGES_TO_CODES
+                    return sorted([(code, str(name).title()) for name, code in m.items()], key=lambda x: x[1])
+                if hasattr(dt_constants, 'GOOGLE_LANGUAGES') and isinstance(dt_constants.GOOGLE_LANGUAGES, dict):
+                    m = dt_constants.GOOGLE_LANGUAGES
+                    return sorted([(code, str(name).title()) for name, code in m.items()], key=lambda x: x[1])
+            except Exception:
+                pass
+
+            langs = GoogleTranslator(source='auto', target='en').get_supported_languages()
+            if isinstance(langs, (list, tuple)):
+                out = []
+                for it in langs:
+                    if isinstance(it, (list, tuple)) and len(it) >= 2:
+                        out.append((it[0], str(it[1]).title()))
+                    elif isinstance(it, str):
+                        out.append((it, it))
+                if out:
+                    return sorted(out, key=lambda x: x[1])
+            raise Exception('Unsupported deep_translator language format')
         except Exception as e:
             _logger.warning(f"Failed to fetch supported languages: {e}")
             # Fallback to simple list if offline or error

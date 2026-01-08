@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="s_auto_system_translator_session_lang_selector" name="Session Translator Language Selector">
+        <section class="s_auto_system_translator_session_lang_selector">
+            <div class="container py-3">
+                <div class="o_ast_session_lang_selector d-inline-flex flex-wrap align-items-center gap-2" role="group" aria-label="Translation language selector">
+                    <label class="mb-0" data-ast-label="1">Language to translate to</label>
+                    <select class="form-select form-select-sm w-auto" data-ast-select="1"/>
+                    <button type="button" class="btn btn-link btn-sm p-0" data-ast-reset="1">Use default</button>
+                    <span class="visually-hidden" data-ast-status="1" aria-live="polite"/>
+                </div>
+            </div>
+        </section>
+    </template>
+
+    <template id="snippet_session_lang_selector_menu" inherit_id="website.snippets">
+        <xpath expr="//t[@id='default_snippets']" position="inside">
+            <div id="s_auto_system_translator_panel" class="o_panel">
+                <div class="o_panel_header">Translator</div>
+                <div class="o_panel_body">
+                    <t t-snippet="auto_system_translator.s_auto_system_translator_session_lang_selector"
+                       t-thumbnail="/auto_system_translator/static/description/icon.svg"/>
+                </div>
+            </div>
+        </xpath>
+    </template>
+</odoo>
+

@@ -9,7 +9,10 @@
   var CONCURRENCY = 2;
   var PROCESSING = 0;
   var LAST_VAL = new WeakMap();
+  var LAST_LANG = new WeakMap();
+  var ORIGINAL_VAL = new WeakMap();
   var OBSERVE_LOCK = false;
+  var SESSION_KEY = "auto_system_translator.session_target_lang";
 
   function cacheGet(text) {
     return CACHE[text];
@@ -55,11 +58,35 @@
       return true;
     return false;
   }
-  function postTranslate(texts) {
+
+  function safeSessionGet(key) {
+    try {
+      return window.sessionStorage.getItem(key);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function getSessionTargetLang() {
+    try {
+      if (window.location && typeof window.location.pathname === "string") {
+        if (window.location.pathname.indexOf("/web") === 0) return "";
+      }
+    } catch (e) {}
+    var v = safeSessionGet(SESSION_KEY);
+    if (!v) return "";
+    return String(v).trim();
+  }
+
+  function postTranslate(texts, targetLang) {
+    var payload = { params: { text: texts[0] } };
+    if (targetLang) {
+      payload.target_lang = targetLang;
+    }
     return fetch("/auto_system_translator/translate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ params: { text: texts[0] } }),
+      body: JSON.stringify(payload),
       credentials: "same-origin",
     })
       .then(function (r) {
@@ -81,6 +108,9 @@
       var s = node.nodeValue;
       if (s && s.length > 500) return;
       if (!s || !s.trim()) return;
+      if (!ORIGINAL_VAL.has(node)) {
+        ORIGINAL_VAL.set(node, s);
+      }
       var last = LAST_VAL.get(node);
       if (last != null && last === s) return;
       var idx = NODE_INDEX.get(node);
@@ -97,6 +127,7 @@
     }
   }
   function collectTexts() {
+    var targetLang = getSessionTargetLang();
     var items = [];
     for (var i = 0; i < NODES.length; i++) {
       var n = NODES[i];
@@ -104,13 +135,19 @@
       var s = n.nodeValue;
       if (!s || !s.trim()) continue;
       var last = LAST_VAL.get(n);
-      if (last != null && last === s) continue;
-      items.push({ i: i, text: s });
+      var lastLang = LAST_LANG.get(n) || "";
+      if (last != null && last === s && lastLang === targetLang) continue;
+      var src = ORIGINAL_VAL.get(n);
+      if (!src) {
+        src = s;
+        ORIGINAL_VAL.set(n, s);
+      }
+      items.push({ i: i, text: src });
       if (items.length >= MAX_BATCH) break;
     }
-    return items;
+    return { items: items, targetLang: targetLang };
   }
-  function applyBatch(resp) {
+  function applyBatch(resp, targetLang) {
     var arr = [];
     if (resp) {
       if (Array.isArray(resp.items)) {
@@ -128,14 +165,19 @@
       if (!node || typeof val !== "string") continue;
       node.nodeValue = val;
       LAST_VAL.set(node, val);
+      LAST_LANG.set(node, targetLang || "");
     }
     OBSERVE_LOCK = false;
   }
-  function sendBatch(items) {
+  function sendBatch(items, targetLang) {
+    var payload = { items: items };
+    if (targetLang) {
+      payload.target_lang = targetLang;
+    }
     return fetch("/auto_system_translator/translate_batch", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items: items }),
+      body: JSON.stringify(payload),
       credentials: "same-origin",
     }).then(function (r) {
       return r.json();
@@ -143,12 +185,13 @@
   }
   function processBatches() {
     if (PROCESSING >= CONCURRENCY) return;
-    var items = collectTexts();
+    var collected = collectTexts();
+    var items = collected.items;
     if (!items.length) return;
     PROCESSING += 1;
-    sendBatch(items)
+    sendBatch(items, collected.targetLang)
       .then(function (resp) {
-        applyBatch(resp);
+        applyBatch(resp, collected.targetLang);
       })
       .finally(function () {
         PROCESSING -= 1;
@@ -202,6 +245,22 @@
         requestAnimationFrame(processBatches);
       });
   }
+
+  function reset() {
+    if (document.body) {
+      LAST_VAL = new WeakMap();
+      LAST_LANG = new WeakMap();
+      walk(document.body);
+      requestAnimationFrame(processBatches);
+    }
+  }
+
+  if (!window.AutoSystemTranslator) {
+    window.AutoSystemTranslator = {};
+  }
+  window.AutoSystemTranslator.reset = reset;
+  window.AutoSystemTranslator.getSessionTargetLang = getSessionTargetLang;
+
   if (
     document.readyState === "complete" ||
     document.readyState === "interactive"

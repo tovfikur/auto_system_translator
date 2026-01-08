@@ -11,10 +11,12 @@
     'depends': [
         'base',
         'web',
+        'website',
     ],
     'data': [
         'security/ir.model.access.csv',
         'views/res_config_settings_views.xml',
+        'views/website_snippets.xml',
     ],
     'assets': {
         'web.assets_backend': [
@@ -24,6 +26,7 @@
         ],
         'web.assets_frontend': [
             'auto_system_translator/static/src/js/auto_translate.js',
+            'auto_system_translator/static/src/js/session_language_selector.js',
         ],
     },
     'installable': True,
