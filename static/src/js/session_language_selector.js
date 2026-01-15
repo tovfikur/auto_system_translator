@@ -3,6 +3,7 @@
   var LANG_CACHE_KEY = "auto_system_translator.supported_languages";
   var LANG_CACHE_VERSION = 2;
   var MIN_EXPECTED_LANGS = 30;
+  var URL_PARAM_KEY = "ast_lang";
   var RTL_BASE_CODES = {
     ar: true,
     dv: true,
@@ -116,6 +117,52 @@
     }
     safeSessionSet(SESSION_KEY, c);
     return c;
+  }
+
+  function isBackendPath(pathname) {
+    if (!pathname) return false;
+    return String(pathname).indexOf("/web") === 0;
+  }
+
+  function syncFromUrlParam() {
+    try {
+      if (isBackendPath(window.location && window.location.pathname)) return;
+      var url = new URL(window.location.href);
+      var v = normalizeLangCode(url.searchParams.get(URL_PARAM_KEY) || "");
+      if (!v) return;
+      setSessionTargetLang(v);
+      url.searchParams.delete(URL_PARAM_KEY);
+      window.history.replaceState(window.history.state, "", url.toString());
+      applyDirAndLang(v);
+    } catch (e) {}
+  }
+
+  function decorateLinkWithLang(a, lang) {
+    try {
+      if (!a || !a.href || !lang) return;
+      var url = new URL(a.href, window.location.href);
+      if (url.origin !== window.location.origin) return;
+      if (isBackendPath(url.pathname)) return;
+      url.searchParams.set(URL_PARAM_KEY, lang);
+      a.href = url.toString();
+    } catch (e) {}
+  }
+
+  function installLinkPropagation() {
+    function handler(ev) {
+      try {
+        var lang = getSessionTargetLang();
+        if (!lang) return;
+        var el = ev.target;
+        while (el && el !== document && el.tagName !== "A") {
+          el = el.parentElement;
+        }
+        if (!el || el.tagName !== "A") return;
+        decorateLinkWithLang(el, lang);
+      } catch (e) {}
+    }
+    document.addEventListener("click", handler, true);
+    document.addEventListener("auxclick", handler, true);
   }
 
   function loadLanguages() {
@@ -252,6 +299,8 @@
   }
 
   function initAll() {
+    syncFromUrlParam();
+    installLinkPropagation();
     var roots = document.querySelectorAll(".o_ast_session_lang_selector");
     for (var i = 0; i < roots.length; i++) {
       initOne(roots[i]);
